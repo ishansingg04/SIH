@@ -6,147 +6,102 @@ AI-powered OPD Patient Kiosk for faster, multilingual patient intake and intelli
 
 ## Project Overview
 
-**MediKiosk AI** is a healthcare kiosk designed for hospitals and clinics where patients enter their symptoms before meeting the doctor. The system supports **English and Hindi**, accepts **voice or text input**, extracts information from **lab reports and prescriptions**, and generates a structured **AI summary** for the doctor.
-
-The goal is to reduce OPD waiting time, improve documentation quality, and give doctors complete patient context before consultation.
+**MediKiosk AI** is a healthcare kiosk designed for primary health centers (PHCs) and community hospitals in Bharat. It enables patients to complete structured intake in **English and Hindi** via **voice input** or text, extracts information from **prescriptions and lab reports** via OCR, supports traditional **AYUSH Dashavidha Pariksha** pathways, and generates an assistive, evidence-linked **AI summary** for clinicians.
 
 ---
 
-## Core Features
+## Core Capabilities & Architecture
 
-### Patient Kiosk
-
-* English / Hindi language selection
-* New & Existing patient registration
-* Voice input (Whisper)
-* Text input
-* Upload previous prescriptions & lab reports
-* OCR extraction from medical documents
-* Patient review screen before submission
-* Automatic queue token generation
-
-### Doctor Dashboard
-
-* Secure doctor login
-* Live patient queue
-* Open patient by token number
-* AI-generated structured medical summary
-* Previous visit history (for existing patients)
-* View uploaded reports and prescriptions
+| Layer | Primary Technology | Fallback / Development Mode |
+| :--- | :--- | :--- |
+| **API Backend** | FastAPI + SQLAlchemy 2.0 + Pydantic | PostgreSQL (Railway / Docker Compose) |
+| **Frontend** | Next.js + Tailwind CSS | Vercel Deployment |
+| **Speech Intake** | Hosted Groq Whisper API | Browser Web Speech API & Mock Adapter |
+| **AYUSH Intake** | Dashavidha Pariksha (Prakriti, Vikriti, Agni, Koshtha, Sattva) | Structured Kiosk & Clinic Forms |
+| **Document OCR** | OCR Provider Pipeline | Mock / Offline Extractor |
+| **AI Summarizer** | LLM Adapter with Explicit Provenance | Strict JSON Schema Validator |
+| **Object Storage** | Hosted Private S3-compatible Storage | Local Storage / MinIO |
+| **Security & RBAC** | JWT Tokens, Bcrypt, Append-only Audit Logs | Role-based Authorization Matrix |
 
 ---
 
-## Tech Stack
-
-| Layer          | Technology             |
-| -------------- | ---------------------- |
-| Frontend       | Next.js + Tailwind CSS |
-| Backend        | FastAPI                |
-| AI             | OpenAI GPT + Whisper   |
-| OCR            | PaddleOCR              |
-| Database       | PostgreSQL             |
-| File Storage   | MinIO                  |
-| Authentication | JWT                    |
-
----
-
-## Backend Architecture
+## Repository & Git Workflow
 
 ```text
-backend/
-│
-├── app/
-│   ├── api/          # REST endpoints
-│   ├── models/       # SQLAlchemy models
-│   ├── schemas/      # Pydantic schemas
-│   ├── services/     # AI, OCR & business logic
-│   ├── db/           # Database configuration
-│   └── main.py
-│
-├── tests/
-├── requirements.txt
+SIH/
+├── apps/
+│   └── api/
+│       ├── app/
+│       │   ├── api/             # Routers, dependencies, middleware
+│       │   ├── core/            # Config, security, logging, exceptions
+│       │   ├── db/              # Session, models, migrations, seed
+│       │   ├── integrations/    # Speech, OCR, Summary, Storage adapter protocols
+│       │   ├── repositories/    # Base data repositories
+│       │   ├── schemas/         # Pydantic models & AYUSH schemas
+│       │   └── services/        # Audit service & domain workflows
+│       ├── tests/               # Automated test suites
+│       ├── alembic.ini
+│       ├── Dockerfile
+│       └── requirements.txt
+├── infra/
+│   └── docker-compose.yml       # Local Postgres + MinIO support
+├── .env.example
+├── .gitignore
+├── Procfile
+├── railway.json
 └── README.md
 ```
 
+### Branch Ownership
+
+Every team member develops on an isolated feature branch branched off `main`:
+
+| Member | Branch | Domain Scope |
+| :--- | :--- | :--- |
+| **Backend Lead** | `main` | Core architecture, database models, migrations, security, shared contracts. |
+| **Member 1** | `feature/auth` | Patient profile registration, OTP verification, login endpoints, auth UI. |
+| **Member 2** | `feature/ai-summary` | Summarization prompts, LLM adapters, AYUSH provenance, doctor review. |
+| **Member 3** | `feature/ocr-whisper` | Groq Whisper speech worker, document OCR extraction, storage uploads. |
+| **Member 4** | `feature/doctor-queue` | FIFO clinic queue state machine, doctor workspace APIs & live queue UI. |
+
 ---
 
-## Git Workflow (Mandatory)
+## Quick Start (Local Development)
 
-**Never push directly to `main`.**
-
-Every member works on their own feature branch.
-
-| Member       | Branch                 |
-| ------------ | ---------------------- |
-| Backend Lead | `main`                 |
-| Member 1     | `feature/auth`         |
-| Member 2     | `feature/ai-summary`   |
-| Member 3     | `feature/ocr-whisper`  |
-| Member 4     | `feature/doctor-queue` |
-
-### Daily Workflow
-
+### 1. Configure Environment
 ```bash
-# Update your branch with latest backend
-git checkout feature/your-branch
-git pull origin main
-
-# Work with Antigravity / Cursor
-
-git add .
-git commit -m "Completed feature"
-git push origin feature/your-branch
+cp .env.example .env
 ```
 
-Create a **Pull Request** after completing your feature. Only the Backend Lead merges into `main`.
+### 2. Install Dependencies
+```bash
+python -m venv .venv
+# On Windows:
+.venv\Scripts\activate
+# On Linux/macOS:
+source .venv/bin/activate
 
----
+pip install -r requirements.txt
+```
 
-## Patient Flow
+### 3. Run Database Migrations & Seed
+```bash
+alembic upgrade head
+python -m app.db.seed
+```
 
-1. Select Language (English / Hindi)
-2. Login or Register
-3. Enter symptoms (Voice/Text)
-4. Upload reports (optional)
-5. OCR + Whisper processing
-6. Patient reviews extracted information
-7. Submit
-8. Queue token generated
-9. Doctor receives AI summary
+### 4. Run Automated Tests
+```bash
+pytest apps/api/tests -v
+```
 
----
-
-## Doctor Flow
-
-1. Login
-2. View live patient queue
-3. Call patient by token
-4. Open detailed summary
-5. Review reports & history
-6. Begin consultation
-
----
-
-## Current Status
-
-* [ ] Backend initialization
-* [ ] Database schema
-* [ ] Authentication APIs
-* [ ] Whisper integration
-* [ ] OCR integration
-* [ ] AI summary generation
-* [ ] Doctor queue
-* [ ] Frontend UI
-
----
-
-## Team Rules
-
-* One feature = One branch
-* Pull latest `main` before starting work
-* Keep commits small and meaningful
-* Open Pull Request for every completed feature
-* Do not modify another member's feature branch
+### 5. Launch API Server
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+- Interactive API Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Health Probe: [http://localhost:8000/health](http://localhost:8000/health)
+- Readiness Probe: [http://localhost:8000/ready](http://localhost:8000/ready)
 
 ---
 
