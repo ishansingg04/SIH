@@ -186,3 +186,96 @@ The platform includes dedicated fields and Pydantic schemas for the 5 key dimens
 - **Database**: Managed PostgreSQL on Railway.
 - **Object Storage**: Hosted S3-compatible private object storage.
 - **Local Dev Support**: `infra/docker-compose.yml` provides local Postgres & MinIO containers.
+
+---
+
+## 9. OCR, Whisper & Uploads Module
+
+**Branch**: `feature/ocr-whisper` | **Owner**: Member 3
+
+### OCR Architecture — Composite Resilience Chain
+
+The OCR pipeline uses a **3-tier fallback** to ensure the kiosk never fails during
+patient intake, even if cloud providers are temporarily unavailable:
+
+```
+Document Upload
+  → 1. PaddleOCRAdapter   (primary: hosted microservice or local engine — fast, accurate)
+  → 2. GroqVisionOCRAdapter (backup: cloud multimodal LLM — kicked in if PaddleOCR unreachable)
+  → 3. Offline Mock Extractor (last resort: deterministic — kiosk stays usable, no 500 errors)
+```
+
+### New Environment Variables
+
+| Variable | Purpose | Default | Staging |
+| :--- | :--- | :--- | :--- |
+| `GROQ_API_KEY` | Groq Whisper & Vision API key | Blank (mock) | `.env` or Railway secret |
+| `WHISPER_PROVIDER_MODE` | Speech transcription provider | `mock` | `groq-hosted` |
+| `OCR_PROVIDER_MODE` | OCR extraction provider chain | `composite` | `composite` |
+| `PADDLEOCR_ENDPOINT` | Hosted PaddleOCR inference URL | `http://localhost:8866/predict/ocr_system` | Docker/Railway URL |
+| `OCR_FALLBACK_ENABLED` | Enable Groq Vision backup if PaddleOCR fails | `true` | `true` |
+| `OCR_FALLBACK_TO_MOCK` | Enable offline fallback if all providers fail | `true` | `true` |
+| `GROQ_OCR_MODEL` | Groq vision model for OCR backup | `llama-3.2-90b-vision-preview` | Same |
+| `WEB_SPEECH_FALLBACK` | Enable browser speech fallback | `true` | `true` |
+| `MAX_AUDIO_SIZE_MB` | Max audio upload size | `25` | `25` |
+| `MAX_DOCUMENT_SIZE_MB` | Max document upload size | `20` | `20` |
+| `MAX_JOB_RETRIES` | Max retry attempts per job | `3` | `3` |
+
+### API Endpoints
+
+| Method | Path | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/v1/visits/{id}/audio` | patient/staff | Upload audio → Groq Whisper transcription job |
+| `POST` | `/api/v1/visits/{id}/uploads` | patient/staff | Upload document → Composite OCR job |
+| `GET` | `/api/v1/inputs/{id}` | authorized | Poll processing status & progress |
+| `POST` | `/api/v1/inputs/{id}/retry` | authorized | Retry a FAILED job |
+| `GET` | `/api/v1/worker/jobs` | operator | List pending/retrying jobs |
+| `POST` | `/api/v1/worker/jobs/{id}/process` | operator | Manually trigger job processing |
+
+### Test Console UI
+
+Open [http://localhost:8000/media-test](http://localhost:8000/media-test) to access the media processing console:
+
+- Record audio or upload a PDF/image prescription
+- Watch real-time job status polling with progress bar
+- View extracted text and structured clinical entities
+- Test retry for failed jobs
+- Browser Web Speech API fallback indicator
+
+### Demo Walkthrough
+
+```bash
+# 1. Start the API
+uvicorn app.main:app --reload --port 8000
+
+# 2. Login as patient (get token)
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"asha.devi@medikiosk.in","password":"Patient@12345"}'
+
+# 3. Upload audio (replace VISIT_ID and TOKEN)
+curl -X POST http://localhost:8000/api/v1/visits/VISIT_ID/audio \
+  -H "Authorization: Bearer TOKEN" \
+  -F "file=@recording.webm" -F "language=en"
+
+# 4. Poll status (replace INPUT_ID)
+curl http://localhost:8000/api/v1/inputs/INPUT_ID \
+  -H "Authorization: Bearer TOKEN"
+
+# 5. Run Groq live integration test (requires GROQ_API_KEY in .env)
+python apps/api/live_test.py
+```
+
+### Integration Note for AI Summary Module
+
+Consume `VisitInput` records where `status=COMPLETED` and `kind IN (AUDIO, PDF, IMAGE)`.
+The `text` field contains the extracted transcript or OCR text.
+The `provenance` JSON contains `confidence`, `language`, and processing metadata.
+Never merge AI inference into clinician-confirmed facts — use explicit provenance labels.
+
+### Running Tests
+
+```bash
+pytest apps/api/tests/test_media.py -v
+```
+

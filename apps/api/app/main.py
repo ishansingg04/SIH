@@ -52,6 +52,17 @@ def create_app() -> FastAPI:
     # 4. Mount API Routers
     app.include_router(main_router)
 
+    # 5. Mount static test UI for media processing console
+    from pathlib import Path
+    media_test_dir = Path(__file__).parent / "media_test"
+    if media_test_dir.exists():
+        from fastapi.staticfiles import StaticFiles
+        app.mount(
+            "/media-test",
+            StaticFiles(directory=str(media_test_dir), html=True),
+            name="media-test",
+        )
+
     return app
 
 
