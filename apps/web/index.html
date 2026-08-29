@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediKiosk | AI Summary & History Test Console</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-icon">🌿</div>
+        <div>
+          <h1>MediKiosk <span>AI Summary & History</span></h1>
+          <p class="subtitle">Clinical Review, AYUSH Dashavidha Pariksha & Longitudinal History</p>
+        </div>
+      </div>
+      <div class="auth-bar">
+        <div class="role-selector">
+          <label for="user-role">Role:</label>
+          <select id="user-role">
+            <option value="doctor" selected>Dr. Sharma (Doctor)</option>
+            <option value="receptionist">Pooja Verma (Receptionist)</option>
+            <option value="admin">Admin (Clinic Admin)</option>
+            <option value="patient">Asha Devi (Patient)</option>
+          </select>
+        </div>
+        <button id="btn-login" class="btn btn-secondary">Switch Token</button>
+        <span id="auth-status" class="badge badge-success">Doctor Active</span>
+      </div>
+    </header>
+
+    <!-- Main Workspace Split Layout -->
+    <main class="main-grid">
+      <!-- Left Column: Controls & Evidence -->
+      <aside class="sidebar-panel">
+        <!-- Target Selector Card -->
+        <section class="card">
+          <h2 class="card-title">1. Target Visit & Patient</h2>
+          <div class="form-group">
+            <label for="visit-id">Visit ID:</label>
+            <div class="input-with-action">
+              <input type="text" id="visit-id" placeholder="Loading seed visit..." />
+              <button id="btn-load-seed" class="btn btn-sm" title="Load Seed Visit">Auto-Fill</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="patient-id">Patient ID:</label>
+            <input type="text" id="patient-id" placeholder="Patient UUID..." />
+          </div>
+          <div class="button-row">
+            <button id="btn-generate-summary" class="btn btn-primary">⚡ Generate Summary</button>
+            <label class="checkbox-label">
+              <input type="checkbox" id="chk-force-refresh" /> Force Refresh
+            </label>
+          </div>
+        </section>
+
+        <!-- Visit Raw Details & Inputs Card -->
+        <section class="card">
+          <h2 class="card-title">2. Captured Evidence</h2>
+          <div id="evidence-container" class="evidence-box">
+            <div class="empty-state">Click "Auto-Fill" or enter a Visit ID to inspect captured evidence.</div>
+          </div>
+        </section>
+
+        <!-- Longitudinal History Card -->
+        <section class="card">
+          <div class="card-header-flex">
+            <h2 class="card-title">3. Longitudinal History</h2>
+            <button id="btn-fetch-history" class="btn btn-sm btn-secondary">Load History</button>
+          </div>
+          <div id="history-container" class="history-box">
+            <div class="empty-state">No patient history loaded. Click "Load History".</div>
+          </div>
+        </section>
+      </aside>
+
+      <!-- Right Column: Live AI Summary & Doctor Review Console -->
+      <section class="content-panel">
+        <!-- Summary Viewer Header -->
+        <div class="card summary-header-card">
+          <div class="summary-status-bar">
+            <div>
+              <span class="label">Summary Status:</span>
+              <span id="summary-badge" class="badge badge-neutral">NOT_LOADED</span>
+            </div>
+            <div>
+              <span class="label">Version:</span>
+              <strong id="summary-version">-</strong>
+            </div>
+            <div>
+              <span class="label">AI Confidence:</span>
+              <span id="summary-confidence" class="confidence-indicator">-</span>
+            </div>
+            <div>
+              <span class="label">Reviewed By:</span>
+              <span id="summary-reviewer" class="reviewer-tag">None</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Structured AI Clinical Summary Card -->
+        <div class="card summary-body-card">
+          <h2 class="card-title">Clinical AI Summary Packet</h2>
+          
+          <!-- Chief Complaint Banner -->
+          <div id="chief-complaint-banner" class="complaint-banner">
+            <span class="complaint-label">Chief Complaint:</span>
+            <span id="chief-complaint-text" class="complaint-val">No summary generated yet.</span>
+          </div>
+
+          <div class="summary-sections">
+            <!-- Patient Reported Facts -->
+            <div class="summary-section">
+              <div class="section-badge patient">Patient-Reported Facts (Voice & Forms)</div>
+              <div id="patient-reported-content" class="section-content empty">Awaiting generation...</div>
+            </div>
+
+            <!-- Document Extracted Facts -->
+            <div class="summary-section">
+              <div class="section-badge doc">Document-Extracted Facts (OCR Prescriptions/Reports)</div>
+              <div id="document-extracted-content" class="section-content empty">Awaiting generation...</div>
+            </div>
+
+            <!-- AYUSH Dashavidha Pariksha -->
+            <div class="summary-section">
+              <div class="section-badge ayush">AYUSH Dashavidha Pariksha Assessment</div>
+              <div id="ayush-assessment-content" class="section-content empty">Awaiting generation...</div>
+            </div>
+
+            <!-- Assistive Model Suggestions & Uncertainty -->
+            <div class="summary-section">
+              <div class="section-badge model">AI Assistive Suggestions & Uncertainty Labels</div>
+              <div id="model-suggestions-content" class="section-content empty">Awaiting generation...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Doctor Review Action Console -->
+        <div class="card review-action-card">
+          <h2 class="card-title">Doctor Verification & Decision</h2>
+          <div class="form-group">
+            <label for="doctor-notes">Doctor Clinical Notes & Corrections:</label>
+            <textarea id="doctor-notes" rows="2" placeholder="Add verified clinical notes or corrections..."></textarea>
+          </div>
+          <div class="review-buttons">
+            <button id="btn-approve" class="btn btn-success" disabled>✓ Approve (Confirm)</button>
+            <button id="btn-edit" class="btn btn-warning" disabled>✎ Edit Summary Payload</button>
+            <button id="btn-reject" class="btn btn-danger" disabled>✕ Reject Summary</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Raw JSON Inspector Drawer / Footer -->
+    <footer class="app-footer">
+      <details>
+        <summary>Debug: API Response & Raw JSON Payload</summary>
+        <pre id="raw-json-output">{}</pre>
+      </details>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

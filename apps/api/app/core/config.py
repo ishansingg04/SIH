@@ -35,13 +35,14 @@ class Settings(BaseSettings):
 
     # AI & Speech Integrations
     GROQ_API_KEY: Optional[str] = Field(default=None, description="Groq Whisper/LLM API Key")
+    GEMINI_API_KEY: Optional[str] = Field(default=None, description="Google Gemini API Key")
     WHISPER_PROVIDER_MODE: str = Field(
         default="mock",
         description="mock | groq-hosted",
     )
     AI_PROVIDER_MODE: str = Field(
         default="mock",
-        description="mock | groq | openai",
+        description="mock | groq | openai | gemini",
     )
     WEB_SPEECH_FALLBACK: bool = Field(
         default=True,

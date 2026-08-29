@@ -52,6 +52,13 @@ def create_app() -> FastAPI:
     # 4. Mount API Routers
     app.include_router(main_router)
 
+    # 5. Mount Minimal Testing Frontend if present
+    import os
+    from fastapi.staticfiles import StaticFiles
+    web_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "web"))
+    if os.path.exists(web_dir):
+        app.mount("/test-console", StaticFiles(directory=web_dir, html=True), name="test_console")
+
     return app
 
 

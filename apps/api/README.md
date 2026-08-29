@@ -139,6 +139,7 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 - **Interactive Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **AI Summary & History Testing Console**: [http://localhost:8000/test-console/](http://localhost:8000/test-console/)
 - **OpenAPI JSON Schema**: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
 - **Liveness Probe**: [http://localhost:8000/health](http://localhost:8000/health)
 - **Readiness Probe**: [http://localhost:8000/ready](http://localhost:8000/ready)
@@ -146,7 +147,35 @@ uvicorn app.main:app --reload --port 8000
 
 ---
 
-## 5. Running Automated Tests
+## 5. AI Summary & History Module (`feature/ai-summary`)
+
+### Endpoints
+- `POST /api/v1/visits/{visit_id}/summary` — Generate structured clinical summary or return cached draft (`force_refresh: true/false`).
+- `GET /api/v1/visits/{visit_id}/summary` — Retrieve latest or specific version of clinical summary.
+- `POST /api/v1/summaries/{summary_id}/review` — Doctor review action (`APPROVE`, `REJECT`, `EDIT`) with audit logging.
+- `GET /api/v1/patients/{patient_id}/history` — Patient longitudinal clinical timeline, deduplicated medications, and AYUSH history.
+- `GET /api/v1/summaries/demo/active-context` — Active context helper for demo and testing console.
+
+### Multi-Provider LLM Support
+Configure via `AI_PROVIDER_MODE`:
+- `mock`: Local deterministic generation (no API keys required).
+- `gemini`: Google Gemini (`gemini-3.6-flash`) via `GEMINI_API_KEY`.
+- `groq`: Hosted Groq Llama 3.3 (`llama-3.3-70b-versatile`) via `GROQ_API_KEY`.
+- `openai`: OpenAI (`gpt-4o-mini`) via `OPENAI_API_KEY`.
+
+---
+
+## 6. Running Automated Tests
+
+Run the complete test harness with coverage:
+
+```bash
+# Run all tests
+pytest -v
+
+# Run AI summary specific tests
+pytest tests/test_summary.py -v
+```
 
 Run the test suite with coverage:
 
