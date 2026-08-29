@@ -8,6 +8,7 @@ from app.db.models.enums import UserRole
 
 if TYPE_CHECKING:
     from app.db.models.clinic import Clinic
+    from app.db.models.patient import Patient
 
 
 class User(Base, UUIDMixin, TimestampMixin):
@@ -35,3 +36,4 @@ class User(Base, UUIDMixin, TimestampMixin):
 
     # Relationships
     clinic: Mapped[Optional["Clinic"]] = relationship("Clinic", back_populates="users")
+    patient: Mapped[Optional["Patient"]] = relationship("Patient", back_populates="user", uselist=False)

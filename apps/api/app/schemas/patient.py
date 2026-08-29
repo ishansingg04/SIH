@@ -17,6 +17,12 @@ class PatientCreate(PatientBase):
     pass
 
 
+class PatientUpdate(BaseModel):
+    name: Optional[str] = Field(None, max_length=255)
+    gender: Optional[str] = Field(None, max_length=20)
+    language: Optional[str] = Field(None, max_length=10)
+
+
 class PatientRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -28,5 +34,10 @@ class PatientRead(BaseModel):
     language: str
     clinic_id: Optional[uuid.UUID] = None
     is_deleted: bool
+    
+    consent_version: Optional[str] = None
+    consent_timestamp: Optional[datetime] = None
+    consent_language: Optional[str] = None
+    
     created_at: datetime
     updated_at: datetime

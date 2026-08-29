@@ -8,7 +8,9 @@ from app.core.security import create_access_token, verify_password
 from app.db.models.user import User
 from app.schemas.common import ApiResponse, Meta
 from app.schemas.user import LoginRequest, TokenResponse, UserRead
+from app.schemas.auth import RegisterRequest
 from app.services.audit_service import AuditService
+from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Authentication Foundation"])
 
@@ -21,7 +23,12 @@ def login(
 ):
     """Authenticate user with email and password, returning JWT access token."""
     request_id = get_request_id(request)
-    stmt = select(User).where(User.email == payload.email)
+    
+    identifier = payload.email.strip()
+    if "@" not in identifier and any(c.isdigit() for c in identifier):
+        identifier = f"{identifier.replace('+', '')}@patient.medikiosk.local"
+        
+    stmt = select(User).where(User.email == identifier)
     user = db.scalars(stmt).first()
 
     if not user or not verify_password(payload.password, user.password_hash):
@@ -74,6 +81,26 @@ def get_current_user_profile(
     return ApiResponse(
         success=True,
         data=UserRead.model_validate(current_user),
+        meta=Meta(request_id=request_id),
+        error=None,
+    )
+
+
+@router.post("/register", response_model=ApiResponse[UserRead])
+def register(
+    request: Request,
+    payload: RegisterRequest,
+    db: Session = Depends(get_db),
+):
+    """Register a new patient."""
+    request_id = get_request_id(request)
+    auth_service = AuthService(db)
+    
+    user, patient = auth_service.register(payload, request_id)
+    
+    return ApiResponse(
+        success=True,
+        data=UserRead.model_validate(user),
         meta=Meta(request_id=request_id),
         error=None,
     )

@@ -1,12 +1,12 @@
 import uuid
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, Field
 from app.db.models.enums import UserRole
 
 
 class UserBase(BaseModel):
-    email: EmailStr
+    email: str
     full_name: str = Field(..., max_length=255)
     role: UserRole = Field(default=UserRole.PATIENT)
     is_active: bool = Field(default=True)
@@ -33,5 +33,5 @@ class TokenResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str

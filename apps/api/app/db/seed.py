@@ -98,10 +98,13 @@ def seed_database(db: Session) -> Dict[str, Any]:
     # 3. Seed Demo Patient (Asha Devi)
     phone = "+919876543210"
     p_hash = hash_phone(phone)
+    asha_user = seeded_users["asha.devi@medikiosk.in"]
     patient = db.scalars(select(Patient).where(Patient.phone_hash == p_hash)).first()
     if not patient:
+        now_seed = datetime.now(timezone.utc)
         patient = Patient(
             id=uuid.uuid4(),
+            user_id=asha_user.id,
             name="Asha Devi",
             phone_hash=p_hash,
             phone_masked=mask_phone(phone),
@@ -110,10 +113,19 @@ def seed_database(db: Session) -> Dict[str, Any]:
             language="hi",
             clinic_id=clinic.id,
             is_deleted=False,
+            consent_version="1.0",
+            consent_timestamp=now_seed,
+            consent_language="hi",
+            consent_actor="seed",
         )
         db.add(patient)
         db.flush()
         logger.info("Seeded Patient: Asha Devi")
+    elif not patient.user_id:
+        # Backfill user_id if patient already exists without it
+        patient.user_id = asha_user.id
+        db.flush()
+        logger.info("Backfilled user_id for Asha Devi patient record")
 
     # 4. Seed Demo Visit (Token A12 with AYUSH Dashavidha Pariksha)
     now = datetime.now(timezone.utc)

@@ -64,3 +64,71 @@ def test_role_based_access_control_on_audit_logs(client, admin_token, doctor_tok
         headers={"Authorization": f"Bearer {operator_token}"},
     )
     assert res_op.status_code == 200
+
+def test_register_successful(client):
+    """New patient can register successfully."""
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "phone": "+919999999999",
+            "name": "Test Patient",
+            "language": "hi",
+            "consent": True,
+            "password": "SecurePassword123!"
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is True
+    assert "id" in body["data"]
+
+def test_register_duplicate_phone(client):
+    """Registering with an existing phone number fails."""
+    # Register first
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "phone": "+918888888888",
+            "name": "Test Patient 1",
+            "language": "en",
+            "consent": True,
+            "password": "SecurePassword123!"
+        },
+    )
+    # Register again
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "phone": "+918888888888",
+            "name": "Test Patient 2",
+            "language": "hi",
+            "consent": True,
+            "password": "SecurePassword123!"
+        },
+    )
+    assert response.status_code == 409
+    body = response.json()
+    assert body["success"] is False
+    assert body["error"]["code"] == "CONFLICT"
+
+def test_login_with_phone_successful(client):
+    """Patient can log in using their phone number."""
+    client.post(
+        "/api/v1/auth/register",
+        json={
+            "phone": "+917777777777",
+            "name": "Login Patient",
+            "language": "en",
+            "consent": True,
+            "password": "SecurePassword123!"
+        },
+    )
+    
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "+917777777777", "password": "SecurePassword123!"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is True
+    assert "access_token" in body["data"]
