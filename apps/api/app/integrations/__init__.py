@@ -1,4 +1,5 @@
 from app.integrations.ocr import (
+    GroqVisionOCRAdapter,
     MockOCRAdapter,
     OCRExtractedItem,
     OCRProvider,
@@ -37,6 +38,7 @@ __all__ = [
     "OCRProvider",
     "OCRResult",
     "OCRExtractedItem",
+    "GroqVisionOCRAdapter",
     "MockOCRAdapter",
     "get_ocr_adapter",
     "SummaryProvider",

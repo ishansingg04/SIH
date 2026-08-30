@@ -204,7 +204,7 @@ The doctor queue module implements strict FIFO dispatching and guarded state tra
      │                                └──── cancel ───► [ CANCELLED ]
 ```
 
-### API Endpoints
+### Queue API Endpoints
 
 | Method | Path | Auth | Description |
 | :--- | :--- | :--- | :--- |
@@ -218,24 +218,35 @@ The doctor queue module implements strict FIFO dispatching and guarded state tra
 | `POST` | `/api/v1/visits/{id}/complete` | Doctor, Admin | Complete encounter with mandatory `disposition` and consultation notes |
 | `POST` | `/api/v1/visits/{id}/summary/review` | Doctor, Admin | Confirm, edit, or reject AI-generated clinical summary |
 
-### Test Console UI
+---
 
-Open [http://localhost:8000/doctor-test](http://localhost:8000/doctor-test) to access the interactive doctor console:
+## 10. OCR, Whisper & Uploads Module
 
-- Live queue auto-refreshing every 5 seconds
-- Token calling and status transitions
-- Full AYUSH Dashavidha Pariksha cards (Prakriti, Vikriti, Agni, Koshtha, Sattva)
-- Structured AI Clinical Summary review and confirmation
-- Evidence audio transcripts and OCR preview
-- Sign & Complete consultation with clinical disposition
+**Branch**: `feature/ocr-whisper` | **Owner**: Member 3
 
-### Running Automated Tests
+### OCR Architecture — Composite Resilience Chain
 
-```bash
-# Run full suite (26 tests including 12 queue tests)
-pytest apps/api/tests/ -v
-
-# Run queue tests specifically
-pytest apps/api/tests/test_queue.py -v
 ```
+Document Upload
+  → 1. PaddleOCRAdapter   (primary: hosted microservice or local engine — fast, accurate)
+  → 2. GroqVisionOCRAdapter (backup: cloud multimodal LLM — kicked in if PaddleOCR unreachable)
+  → 3. Offline Mock Extractor (last resort: deterministic — kiosk stays usable, no 500 errors)
+```
+
+### Media API Endpoints
+
+| Method | Path | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/v1/visits/{id}/audio` | patient/staff | Upload audio → Groq Whisper transcription job |
+| `POST` | `/api/v1/visits/{id}/uploads` | patient/staff | Upload document → Composite OCR job |
+| `GET` | `/api/v1/inputs/{id}` | authorized | Poll processing status & progress |
+| `POST` | `/api/v1/inputs/{id}/retry` | authorized | Retry a FAILED job |
+| `GET` | `/api/v1/worker/jobs` | operator | List pending/retrying jobs |
+| `POST` | `/api/v1/worker/jobs/{id}/process` | operator | Manually trigger job processing |
+
+### Interactive Test Consoles
+
+- Doctor Queue Console: [http://localhost:8000/doctor-test](http://localhost:8000/doctor-test)
+- Media & OCR Console: [http://localhost:8000/media-test](http://localhost:8000/media-test)
+
 

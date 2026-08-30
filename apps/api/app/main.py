@@ -52,19 +52,29 @@ def create_app() -> FastAPI:
     # 4. Mount API Routers
     app.include_router(main_router)
 
-    # 5. Mount static test UI for doctor queue console
+    # 5. Mount static test UIs
     from pathlib import Path
+    from fastapi.staticfiles import StaticFiles
+
     doctor_test_dir = Path(__file__).parent / "doctor_test"
     if doctor_test_dir.exists():
-        from fastapi.staticfiles import StaticFiles
         app.mount(
             "/doctor-test",
             StaticFiles(directory=str(doctor_test_dir), html=True),
             name="doctor-test",
         )
 
+    media_test_dir = Path(__file__).parent / "media_test"
+    if media_test_dir.exists():
+        app.mount(
+            "/media-test",
+            StaticFiles(directory=str(media_test_dir), html=True),
+            name="media-test",
+        )
+
     return app
 
 
 app = create_app()
+
 

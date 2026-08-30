@@ -47,6 +47,31 @@ class Settings(BaseSettings):
         default=True,
         description="Enable browser Web Speech API fallback",
     )
+    OCR_PROVIDER_MODE: str = Field(
+        default="composite",
+        description="composite | paddleocr | groq-vision | mock",
+    )
+    PADDLEOCR_ENDPOINT: Optional[str] = Field(
+        default="http://localhost:8866/predict/ocr_system",
+        description="URL for hosted PaddleOCR microservice",
+    )
+    OCR_FALLBACK_ENABLED: bool = Field(
+        default=True,
+        description="Enable automatic fallback to secondary OCR provider if primary fails",
+    )
+    OCR_FALLBACK_TO_MOCK: bool = Field(
+        default=True,
+        description="Enable graceful fallback to deterministic mock OCR if all remote providers fail",
+    )
+    GROQ_OCR_MODEL: str = Field(
+        default="llama-3.2-90b-vision-preview",
+        description="Groq vision model for OCR extraction",
+    )
+
+    # Upload and Job Processing Limits
+    MAX_AUDIO_SIZE_MB: int = Field(default=25, description="Maximum audio file size in MB")
+    MAX_DOCUMENT_SIZE_MB: int = Field(default=20, description="Maximum document file size in MB")
+    MAX_JOB_RETRIES: int = Field(default=3, description="Maximum retry attempts for AI jobs")
 
     # AYUSH & Clinical Workflow Feature Flags
     AYUSH_INTAKE_ENABLED: bool = Field(

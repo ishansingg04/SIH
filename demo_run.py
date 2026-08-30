@@ -11,6 +11,11 @@ if sys.platform == "win32":
 # Ensure app package is discoverable
 sys.path.insert(0, os.path.abspath("apps/api"))
 
+# Default to SQLite file if PostgreSQL is not active
+if not os.environ.get("DATABASE_URL") or "localhost:5432" in os.environ.get("DATABASE_URL", ""):
+    os.environ["DATABASE_URL"] = "sqlite:///./medikiosk_demo.db"
+os.environ["APP_ENV"] = "local"
+
 from app.main import app
 from app.db.base import Base
 from app.db.models.clinic import Clinic
