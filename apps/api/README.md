@@ -186,3 +186,56 @@ The platform includes dedicated fields and Pydantic schemas for the 5 key dimens
 - **Database**: Managed PostgreSQL on Railway.
 - **Object Storage**: Hosted S3-compatible private object storage.
 - **Local Dev Support**: `infra/docker-compose.yml` provides local Postgres & MinIO containers.
+
+---
+
+## 9. Doctor Live Queue & Workspace Module
+
+**Branch**: `feature/doctor-queue` | **Owner**: Member 4
+
+### FIFO State Machine & Business Invariants
+
+The doctor queue module implements strict FIFO dispatching and guarded state transitions:
+
+```
+[ WAITING ] ──── claim_next ───► [ CALLED ] ──── start ────► [ IN_PROGRESS ] ──── complete ───► [ COMPLETED ]
+     │                                │                             │
+     ├──── cancel ───► [ CANCELLED ]  ├──── no_show ──► [ NO_SHOW ] └──── flag ───────► [ NEEDS_REVIEW ]
+     │                                └──── cancel ───► [ CANCELLED ]
+```
+
+### API Endpoints
+
+| Method | Path | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/queue/today` | Staff (`doctor`, `receptionist`, `admin`) | Fetch today's waiting list in strict FIFO order with wait times |
+| `GET` | `/api/v1/queue/summary` | Staff | Real-time counts (waiting, in-progress, completed, max wait) |
+| `POST` | `/api/v1/queue/claim-next` | Doctor, Admin | Claim and call the next eligible patient in FIFO sequence |
+| `POST` | `/api/v1/queue/{id}/in-progress` | Doctor, Admin | Transition called patient to in-progress consultation |
+| `POST` | `/api/v1/queue/{id}/no-show` | Doctor, Receptionist, Admin | Mark unresponsive patient as `NO_SHOW` |
+| `POST` | `/api/v1/queue/{id}/cancel` | Doctor, Receptionist, Admin | Cancel a queue entry |
+| `GET` | `/api/v1/doctor/workspace/{visit_id}` | Doctor, Admin | Unified clinical context (demographics, AYUSH findings, AI summary, raw inputs) |
+| `POST` | `/api/v1/visits/{id}/complete` | Doctor, Admin | Complete encounter with mandatory `disposition` and consultation notes |
+| `POST` | `/api/v1/visits/{id}/summary/review` | Doctor, Admin | Confirm, edit, or reject AI-generated clinical summary |
+
+### Test Console UI
+
+Open [http://localhost:8000/doctor-test](http://localhost:8000/doctor-test) to access the interactive doctor console:
+
+- Live queue auto-refreshing every 5 seconds
+- Token calling and status transitions
+- Full AYUSH Dashavidha Pariksha cards (Prakriti, Vikriti, Agni, Koshtha, Sattva)
+- Structured AI Clinical Summary review and confirmation
+- Evidence audio transcripts and OCR preview
+- Sign & Complete consultation with clinical disposition
+
+### Running Automated Tests
+
+```bash
+# Run full suite (26 tests including 12 queue tests)
+pytest apps/api/tests/ -v
+
+# Run queue tests specifically
+pytest apps/api/tests/test_queue.py -v
+```
+
