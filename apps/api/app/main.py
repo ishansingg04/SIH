@@ -14,10 +14,14 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager for startup and shutdown routines."""
     setup_logging(settings.LOG_LEVEL)
     logger.info(f"Starting {settings.APP_NAME} in '{settings.APP_ENV}' environment...")
-    # In local/test mode, ensure metadata tables are initialized
     if settings.APP_ENV == "local" or settings.DATABASE_URL.startswith("sqlite"):
         Base.metadata.create_all(bind=engine)
         logger.info("Local database tables verified/created.")
+        from app.db.session import SessionLocal
+        from app.db.seed import seed_database
+        with SessionLocal() as session:
+            seed_database(session)
+        logger.info("Local seed data loaded.")
     yield
     logger.info(f"Shutting down {settings.APP_NAME}...")
 

@@ -300,6 +300,9 @@ let pollingIntervals = {};
 // ====================== Helpers ======================
 function getApi() { return document.getElementById('apiUrl').value.replace(/\/$/, ''); }
 function getVisitId() { return document.getElementById('visitId').value.trim(); }
+function isValidUUID(str) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+}
 function getHeaders() {
     const h = { };
     const token = document.getElementById('authToken').value.trim();
@@ -365,7 +368,9 @@ async function toggleRecording() {
 }
 
 async function uploadAudio() {
-    if (!getVisitId()) { alert('Enter a Visit ID first'); return; }
+    const vid = getVisitId();
+    if (!vid) { alert('Enter a Visit ID first'); return; }
+    if (!isValidUUID(vid)) { alert(`Invalid Visit ID "${vid}". Please provide a valid UUID (e.g. from the auto-filled demo visit).`); return; }
     if (!audioChunks.length) { alert('Record audio first'); return; }
 
     const blob = new Blob(audioChunks, { type: 'audio/webm' });
@@ -378,7 +383,7 @@ async function uploadAudio() {
     document.getElementById('audioProgress').style.width = '10%';
 
     try {
-        const res = await fetch(`${getApi()}/api/v1/visits/${getVisitId()}/audio`, {
+        const res = await fetch(`${getApi()}/api/v1/visits/${vid}/audio`, {
             method: 'POST',
             headers: getHeaders(),
             body: formData,
@@ -423,7 +428,9 @@ function selectFile(file) {
 }
 
 async function uploadDocument() {
-    if (!getVisitId()) { alert('Enter a Visit ID first'); return; }
+    const vid = getVisitId();
+    if (!vid) { alert('Enter a Visit ID first'); return; }
+    if (!isValidUUID(vid)) { alert(`Invalid Visit ID "${vid}". Please provide a valid UUID (e.g. from the auto-filled demo visit).`); return; }
     if (!selectedFile) { alert('Select a file first'); return; }
 
     const formData = new FormData();
@@ -599,6 +606,40 @@ function toggleWebSpeech() {
 const params = new URLSearchParams(window.location.search);
 if (params.get('api')) document.getElementById('apiUrl').value = params.get('api');
 if (params.get('visit')) document.getElementById('visitId').value = params.get('visit');
+
+window.addEventListener('DOMContentLoaded', async () => {
+    // Auto-discover active demo visit and auto-login as patient for seamless local testing
+    try {
+        const api = getApi();
+        if (!document.getElementById('visitId').value) {
+            const ctxResp = await fetch(`${api}/api/v1/summaries/demo/active-context`);
+            if (ctxResp.ok) {
+                const ctxData = await ctxResp.json();
+                if (ctxData.success && ctxData.data?.visit_id) {
+                    document.getElementById('visitId').value = ctxData.data.visit_id;
+                    console.log("Auto-populated active demo visit ID:", ctxData.data.visit_id);
+                }
+            }
+        }
+
+        if (!document.getElementById('authToken').value) {
+            const loginResp = await fetch(`${api}/api/v1/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: 'asha.devi@medikiosk.in', password: 'Patient@12345' })
+            });
+            if (loginResp.ok) {
+                const loginData = await loginResp.json();
+                if (loginData.success && loginData.data?.access_token) {
+                    document.getElementById('authToken').value = `Bearer ${loginData.data.access_token}`;
+                    console.log("Auto-authenticated as demo patient Asha Devi");
+                }
+            }
+        }
+    } catch (e) {
+        console.warn("Auto-initialization helper:", e.message);
+    }
+});
 </script>
 </body>
 </html>
