@@ -7,6 +7,7 @@ from app.api.v1.endpoints import (
     platform,
     processing,
     queue,
+    summaries,
     uploads,
     visits,
 )
@@ -23,4 +24,5 @@ api_v1_router.include_router(doctor.router)
 api_v1_router.include_router(doctor.visits_doctor_router)
 api_v1_router.include_router(uploads.router)
 api_v1_router.include_router(processing.router)
+api_v1_router.include_router(summaries.router)
 
