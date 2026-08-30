@@ -7,11 +7,14 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# Ensure app package is in path
+# Ensure app package is in path and force SQLite in-memory for testing
 test_dir = os.path.dirname(os.path.abspath(__file__))
 api_dir = os.path.abspath(os.path.join(test_dir, ".."))
 if api_dir not in sys.path:
     sys.path.insert(0, api_dir)
+
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["APP_ENV"] = "test"
 
 from app.api.dependencies import get_db
 from app.core.security import create_access_token
@@ -20,6 +23,7 @@ from app.db.models.enums import UserRole
 from app.db.models.user import User
 from app.db.seed import seed_database
 from app.main import app
+
 
 # Test database in memory
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -109,3 +113,14 @@ def operator_token(db_session):
         role=user.role.value,
         clinic_id=str(user.clinic_id) if user.clinic_id else None,
     )
+
+
+@pytest.fixture
+def receptionist_token(db_session):
+    user = db_session.scalars(select(User).where(User.email == "reception@medikiosk.in")).first()
+    return create_access_token(
+        subject=user.id,
+        role=user.role.value,
+        clinic_id=str(user.clinic_id) if user.clinic_id else None,
+    )
+

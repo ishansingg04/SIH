@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediKiosk — Doctor Live Queue & Workspace Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #131b2e;
+      --card-border: #1e293b;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #10b981;
+      --ayush-bg: #14532d;
+      --ayush-text: #86efac;
+      --ayush-border: #22c55e;
+      --allopathic-bg: #1e3a8a;
+      --allopathic-text: #93c5fd;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: rgba(19, 27, 46, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #3b82f6, #10b981);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: white;
+      font-size: 1.1rem;
+    }
+
+    .brand h1 { font-size: 1.25rem; font-weight: 700; }
+    .brand p { font-size: 0.75rem; color: var(--text-muted); }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-pill {
+      background: #1e293b;
+      padding: 0.4rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid var(--card-border);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-success { background: #059669; }
+    .btn-success:hover { background: #047857; }
+    .btn-danger { background: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-warning { background: #d97706; }
+    .btn-warning:hover { background: #b45309; }
+    .btn-secondary { background: #334155; }
+    .btn-secondary:hover { background: #475569; }
+    .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.75rem; }
+
+    main {
+      padding: 1.5rem 2rem;
+      flex: 1;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 1.5rem;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .stat-box {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      text-align: center;
+    }
+
+    .stat-val { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
+    .stat-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+
+    .queue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      overflow-y: auto;
+      max-height: 580px;
+      padding-right: 4px;
+    }
+
+    .queue-item {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .queue-item:hover, .queue-item.active {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .queue-item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .token-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.95rem;
+      background: #1e293b;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      color: #38bdf8;
+      border: 1px solid #0284c7;
+    }
+
+    .state-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+
+    .state-WAITING { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .state-CALLED { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .state-IN_PROGRESS { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .state-COMPLETED { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.3); }
+    .state-NO_SHOW { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .pathway-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .pathway-AYUSH { background: var(--ayush-bg); color: var(--ayush-text); border: 1px solid var(--ayush-border); }
+    .pathway-ALLOPATHIC { background: var(--allopathic-bg); color: var(--allopathic-text); border: 1px solid #3b82f6; }
+
+    .queue-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Workspace Panel */
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .patient-hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .patient-info h2 { font-size: 1.35rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .patient-sub { color: var(--text-muted); font-size: 0.85rem; display: flex; gap: 1rem; }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.5rem;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--primary);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+
+    .box {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.9rem;
+    }
+
+    .box-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .box-content { font-size: 0.85rem; line-height: 1.4; }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 0.8rem;
+    }
+
+    label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+
+    select, textarea, input {
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 0.6rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+
+    select:focus, textarea:focus, input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .action-bar {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--card-border);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.3rem;
+    }
+
+    .pill {
+      background: rgba(59, 130, 246, 0.15);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #1e293b;
+      border: 1px solid var(--card-border);
+      padding: 0.8rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">MK</div>
+      <div>
+        <h1>MediKiosk — Doctor Queue & Workspace</h1>
+        <p>AI-Assisted Clinic Triage & AYUSH Integration Platform</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="user-pill" id="userPill">
+        <span class="status-dot"></span>
+        <span id="userName">Dr. Priya Sharma (Doctor)</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="switchUser('doctor')">Doctor Login</button>
+      <button class="btn btn-secondary btn-sm" onclick="switchUser('reception')">Reception Login</button>
+      <button class="btn btn-primary btn-sm" onclick="refreshQueue()">↻ Refresh</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left Column: Queue List & Actions -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>📋 Live Queue</span>
+          <span id="queueCountBadge" class="token-badge" style="font-size: 0.75rem;">0</span>
+        </div>
+        <button class="btn btn-success btn-sm" id="claimNextBtn" onclick="claimNext()">
+          ⚡ Call Next Patient
+        </button>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-val" id="statWaiting">0</div>
+          <div class="stat-label">Waiting</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="statProgress">0</div>
+          <div class="stat-label">In Progress</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="statDone">0</div>
+          <div class="stat-label">Done Today</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="statWaitTime">0m</div>
+          <div class="stat-label">Max Wait</div>
+        </div>
+      </div>
+
+      <div class="queue-list" id="queueList">
+        <div class="empty-state">
+          <div class="empty-icon">⏳</div>
+          <p>Loading queue entries...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Doctor Workspace & Detail Context -->
+    <div class="workspace">
+      <div id="noSelectionBanner" class="card empty-state" style="padding: 5rem 2rem;">
+        <div class="empty-icon">🩺</div>
+        <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">No Active Patient Selected</h3>
+        <p style="font-size: 0.85rem;">Click a patient from the queue or click <strong>Call Next Patient</strong> to start a consultation.</p>
+      </div>
+
+      <div id="workspacePanel" style="display: none; flex-direction: column; gap: 1.25rem;">
+        <!-- Patient Hero -->
+        <div class="patient-hero">
+          <div class="patient-info">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem;">
+              <span class="token-badge" id="heroToken">A12</span>
+              <h2 id="heroName">Asha Devi</h2>
+              <span id="heroPathway" class="pathway-badge pathway-AYUSH">🌿 AYUSH</span>
+              <span id="heroState" class="state-badge state-WAITING">WAITING</span>
+            </div>
+            <div class="patient-sub">
+              <span>👤 <strong id="heroDemographics">Female, 38y</strong></span>
+              <span>🗣️ Lang: <strong id="heroLanguage">Hindi (hi)</strong></span>
+              <span>⏱️ Token Wait: <strong id="heroWait">12 mins</strong></span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-primary btn-sm" id="startBtn" onclick="markInProgress()">▶ Start Consultation</button>
+            <button class="btn btn-danger btn-sm" onclick="markNoShow()">✕ No Show</button>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('tabAyush')">🌿 AYUSH Findings</button>
+          <button class="tab-btn" onclick="switchTab('tabSummary')">✨ AI Clinical Summary</button>
+          <button class="tab-btn" onclick="switchTab('tabEvidence')">🎙️ Audio & Documents</button>
+          <button class="tab-btn" onclick="switchTab('tabComplete')">📝 Complete & Disposition</button>
+        </div>
+
+        <!-- Tab 1: AYUSH Dashavidha Pariksha -->
+        <div id="tabAyush" class="tab-content active card">
+          <div class="card-title" style="margin-bottom: 1rem;">🌿 Dashavidha Pariksha (Ayurvedic Constitution & Imbalance)</div>
+          <div class="grid-3" style="margin-bottom: 1rem;">
+            <div class="box">
+              <div class="box-title">🧬 Prakriti (Baseline)</div>
+              <div class="box-content" id="ayushPrakriti">VATA-PITTA constitution</div>
+            </div>
+            <div class="box">
+              <div class="box-title">⚖️ Vikriti (Imbalance)</div>
+              <div class="box-content" id="ayushVikriti">VATA aggravation (Dry cough)</div>
+            </div>
+            <div class="box">
+              <div class="box-title">🔥 Agni (Digestion)</div>
+              <div class="box-content" id="ayushAgni">VISHAMA (Irregular digestion)</div>
+            </div>
+            <div class="box">
+              <div class="box-title">💧 Koshtha (Bowel)</div>
+              <div class="box-content" id="ayushKoshtha">KRURA (Constipated / Hard)</div>
+            </div>
+            <div class="box">
+              <div class="box-title">🧠 Sattva (Mental State)</div>
+              <div class="box-content" id="ayushSattva">MADHYAMA (Moderate resilience)</div>
+            </div>
+            <div class="box">
+              <div class="box-title">📌 Kiosk Intake Notes</div>
+              <div class="box-content" id="ayushNotes">Hindi voice intake at kiosk</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: AI Summary -->
+        <div id="tabSummary" class="tab-content card">
+          <div class="card-header">
+            <div class="card-title">✨ Structured AI Clinical Summary</div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-success btn-sm" onclick="reviewSummary('CONFIRMED')">✓ Confirm AI Summary</button>
+              <button class="btn btn-danger btn-sm" onclick="reviewSummary('REJECTED')">✕ Reject</button>
+            </div>
+          </div>
+          <div class="grid-2" style="margin-bottom: 1rem;">
+            <div class="box">
+              <div class="box-title">🗣️ Patient Reported (Transcribed)</div>
+              <div class="box-content" id="sumPatientReported">Loading...</div>
+            </div>
+            <div class="box">
+              <div class="box-title">📄 Document Extracted (OCR)</div>
+              <div class="box-content" id="sumDocExtracted">Loading...</div>
+            </div>
+          </div>
+          <div class="box" style="margin-bottom: 1rem;">
+            <div class="box-title">💡 Assistive Clinical Suggestions (Non-Autonomous)</div>
+            <div class="box-content" id="sumSuggestions">Loading...</div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Evidence (Audio + OCR) -->
+        <div id="tabEvidence" class="tab-content card">
+          <div class="card-title" style="margin-bottom: 1rem;">🎙️ Raw Evidence & Media Inputs</div>
+          <div id="evidenceList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <p class="text-muted" style="font-size: 0.85rem;">No raw inputs linked to this visit.</p>
+          </div>
+        </div>
+
+        <!-- Tab 4: Complete & Disposition -->
+        <div id="tabComplete" class="tab-content card">
+          <div class="card-title" style="margin-bottom: 1rem;">📝 Visit Disposition & Completion</div>
+          <div class="form-group">
+            <label>Clinical Disposition Category *</label>
+            <select id="dispositionSelect">
+              <option value="FOLLOW_UP">Follow-Up Recommended (7 days)</option>
+              <option value="PRESCRIBED">Prescription Issued / Dispatched</option>
+              <option value="DISCHARGED">Consultation Completed (Discharged)</option>
+              <option value="REFERRED">Referred to Specialist / District Hospital</option>
+              <option value="NO_ACTION">No Clinical Action Required</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Doctor's Consultation Notes & Advice</label>
+            <textarea id="doctorNotesInput" rows="4" placeholder="Enter patient advice, prescribed medications, or follow-up instructions..."></textarea>
+          </div>
+          <div class="action-bar">
+            <button class="btn btn-success" onclick="completeCurrentVisit()">
+              ✓ Sign & Complete Visit
+            </button>
+            <button class="btn btn-secondary" onclick="cancelCurrentVisit()">
+              Cancel Visit
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" id="toastMsg">Action completed successfully</div>
+
+  <script>
+    let authToken = null;
+    let currentClinicId = null;
+    let selectedVisitId = null;
+    let currentQueueEntryId = null;
+    let pollInterval = null;
+
+    const API_BASE = '/api/v1';
+
+    // Auto-login on load
+    window.addEventListener('DOMContentLoaded', async () => {
+      await switchUser('doctor');
+      startAutoPoll();
+    });
+
+    async function switchUser(role) {
+      const email = role === 'doctor' ? 'dr.sharma@medikiosk.in' : 'reception@medikiosk.in';
+      const password = role === 'doctor' ? 'Doctor@12345' : 'Reception@12345';
+      const displayName = role === 'doctor' ? 'Dr. Priya Sharma (Doctor)' : 'Ramesh Kumar (Reception)';
+
+      try {
+        const resp = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const res = await resp.json();
+        if (res.success) {
+          authToken = res.data.access_token;
+          document.getElementById('userName').innerText = displayName;
+          showToast(`Logged in as ${displayName}`);
+          await refreshQueue();
+        } else {
+          showToast(`Login failed: ${res.error?.message || 'Unknown error'}`);
+        }
+      } catch (err) {
+        showToast(`Login network error: ${err.message}`);
+      }
+    }
+
+    async function refreshQueue() {
+      if (!authToken) return;
+      try {
+        const resp = await fetch(`${API_BASE}/queue/today`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const res = await resp.json();
+        if (res.success) {
+          renderQueue(res.data);
+        }
+      } catch (err) {
+        console.error("Queue fetch error:", err);
+      }
+    }
+
+    function renderQueue(data) {
+      const { entries, summary } = data;
+      document.getElementById('statWaiting').innerText = summary.waiting_count;
+      document.getElementById('statProgress').innerText = summary.in_progress_count;
+      document.getElementById('statDone').innerText = summary.completed_today_count;
+      document.getElementById('statWaitTime').innerText = `${summary.oldest_wait_minutes}m`;
+      document.getElementById('queueCountBadge').innerText = entries.length;
+
+      const listEl = document.getElementById('queueList');
+      if (!entries || entries.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">☕</div>
+            <p>No patients in queue today</p>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = entries.map(e => `
+        <div class="queue-item ${e.visit_id === selectedVisitId ? 'active' : ''}" onclick="selectPatient('${e.visit_id}', '${e.id}')">
+          <div class="queue-item-top">
+            <span class="token-badge">${e.token}</span>
+            <span class="state-badge state-${e.state}">${e.state}</span>
+          </div>
+          <div style="font-weight: 700; font-size: 0.9rem;">${e.patient_name}</div>
+          <div class="queue-meta">
+            <span class="pathway-badge pathway-${e.intake_pathway || 'ALLOPATHIC'}">
+              ${e.intake_pathway === 'AYUSH' ? '🌿 AYUSH' : '🏥 ALLOPATHIC'}
+            </span>
+            <span>⏱️ ${e.wait_minutes}m ago</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function selectPatient(visitId, queueEntryId) {
+      selectedVisitId = visitId;
+      currentQueueEntryId = queueEntryId;
+      document.getElementById('noSelectionBanner').style.display = 'none';
+      document.getElementById('workspacePanel').style.display = 'flex';
+
+      try {
+        const resp = await fetch(`${API_BASE}/doctor/workspace/${visitId}`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const res = await resp.json();
+        if (res.success) {
+          populateWorkspace(res.data);
+        }
+      } catch (err) {
+        showToast(`Failed to load patient: ${err.message}`);
+      }
+      refreshQueue();
+    }
+
+    function populateWorkspace(data) {
+      const { visit, patient_name, patient_gender, patient_age, patient_language, summaries, inputs, queue_entry } = data;
+      
+      document.getElementById('heroToken').innerText = visit.token;
+      document.getElementById('heroName').innerText = patient_name;
+      document.getElementById('heroPathway').innerText = visit.intake_pathway === 'AYUSH' ? '🌿 AYUSH' : '🏥 ALLOPATHIC';
+      document.getElementById('heroPathway').className = `pathway-badge pathway-${visit.intake_pathway}`;
+      document.getElementById('heroState').innerText = visit.status;
+      document.getElementById('heroState').className = `state-badge state-${visit.status}`;
+      document.getElementById('heroDemographics').innerText = `${patient_gender || 'Unknown'}, ${patient_age ? patient_age + 'y' : 'Age N/A'}`;
+      document.getElementById('heroLanguage').innerText = patient_language;
+      document.getElementById('heroWait').innerText = queue_entry ? `${queue_entry.wait_minutes} mins` : 'N/A';
+
+      // Populate AYUSH
+      const formatAyush = (obj) => obj ? Object.entries(obj).map(([k, v]) => `<strong>${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}`).join('<br>') : 'None recorded';
+      document.getElementById('ayushPrakriti').innerHTML = formatAyush(visit.prakriti);
+      document.getElementById('ayushVikriti').innerHTML = formatAyush(visit.vikriti);
+      document.getElementById('ayushAgni').innerHTML = formatAyush(visit.agni);
+      document.getElementById('ayushKoshtha').innerHTML = formatAyush(visit.koshtha);
+      document.getElementById('ayushSattva').innerHTML = formatAyush(visit.sattva);
+      document.getElementById('ayushNotes').innerText = visit.ayush_notes || 'No notes';
+
+      // Populate Summary
+      if (summaries && summaries.length > 0) {
+        const s = summaries[0].payload_json || {};
+        document.getElementById('sumPatientReported').innerHTML = Object.entries(s.patient_reported || {}).map(([k, v]) => `<strong>${k}:</strong> ${v}`).join('<br>') || 'No patient reported data';
+        document.getElementById('sumDocExtracted').innerHTML = Object.entries(s.document_extracted || {}).map(([k, v]) => `<strong>${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}`).join('<br>') || 'No document data';
+        
+        const suggs = s.model_suggestions || [];
+        document.getElementById('sumSuggestions').innerHTML = suggs.length > 0 
+          ? suggs.map(sg => `<div style="margin-bottom:0.4rem;">• <strong>${sg.category || 'Note'}:</strong> ${sg.suggestion}</div>`).join('') 
+          : 'No AI suggestions generated.';
+      } else {
+        document.getElementById('sumPatientReported').innerText = 'No summary generated yet.';
+        document.getElementById('sumDocExtracted').innerText = 'No summary generated yet.';
+        document.getElementById('sumSuggestions').innerText = 'No suggestions.';
+      }
+
+      // Populate Evidence
+      const evEl = document.getElementById('evidenceList');
+      if (inputs && inputs.length > 0) {
+        evEl.innerHTML = inputs.map(i => `
+          <div class="box">
+            <div class="box-title">${i.kind === 'AUDIO' ? '🎙️ Audio Recording' : '📄 Document Scan'} (${i.status})</div>
+            <div class="box-content">
+              <p>${i.text_snippet || 'No text extracted'}</p>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.3rem;">
+                Confidence: ${i.confidence ? Math.round(i.confidence * 100) + '%' : 'N/A'} • Created: ${new Date(i.created_at).toLocaleTimeString()}
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        evEl.innerHTML = '<p class="text-muted">No raw inputs uploaded.</p>';
+      }
+    }
+
+    async function claimNext() {
+      try {
+        const resp = await fetch(`${API_BASE}/queue/claim-next`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const res = await resp.json();
+        if (res.success) {
+          showToast(`Called Token ${res.data.visit.token}`);
+          await selectPatient(res.data.visit.id, res.data.queue_entry.id);
+        } else {
+          showToast(`Error: ${res.error?.message || 'No patients waiting'}`);
+        }
+      } catch (err) {
+        showToast(`Network error: ${err.message}`);
+      }
+    }
+
+    async function markInProgress() {
+      if (!currentQueueEntryId) return;
+      try {
+        const resp = await fetch(`${API_BASE}/queue/${currentQueueEntryId}/in-progress`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const res = await resp.json();
+        if (res.success) {
+          showToast("Consultation marked In-Progress");
+          selectPatient(selectedVisitId, currentQueueEntryId);
+        } else {
+          showToast(`Error: ${res.error?.message}`);
+        }
+      } catch (err) {
+        showToast(`Error: ${err.message}`);
+      }
+    }
+
+    async function markNoShow() {
+      if (!currentQueueEntryId) return;
+      try {
+        const resp = await fetch(`${API_BASE}/queue/${currentQueueEntryId}/no-show`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: "Patient did not respond to token call" })
+        });
+        const res = await resp.json();
+        if (res.success) {
+          showToast("Marked as NO_SHOW");
+          refreshQueue();
+          document.getElementById('noSelectionBanner').style.display = 'block';
+          document.getElementById('workspacePanel').style.display = 'none';
+        }
+      } catch (err) {
+        showToast(`Error: ${err.message}`);
+      }
+    }
+
+    async function completeCurrentVisit() {
+      if (!selectedVisitId) return;
+      const disposition = document.getElementById('dispositionSelect').value;
+      const note = document.getElementById('doctorNotesInput').value;
+
+      try {
+        const resp = await fetch(`${API_BASE}/visits/${selectedVisitId}/complete`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ disposition, note })
+        });
+        const res = await resp.json();
+        if (res.success) {
+          showToast("Visit successfully completed & audited! ✓");
+          refreshQueue();
+          document.getElementById('noSelectionBanner').style.display = 'block';
+          document.getElementById('workspacePanel').style.display = 'none';
+        } else {
+          showToast(`Error: ${res.error?.message}`);
+        }
+      } catch (err) {
+        showToast(`Network error: ${err.message}`);
+      }
+    }
+
+    async function cancelCurrentVisit() {
+      if (!currentQueueEntryId) return;
+      try {
+        const resp = await fetch(`${API_BASE}/queue/${currentQueueEntryId}/cancel`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: "Doctor cancelled encounter" })
+        });
+        const res = await resp.json();
+        if (res.success) {
+          showToast("Visit cancelled");
+          refreshQueue();
+          document.getElementById('noSelectionBanner').style.display = 'block';
+          document.getElementById('workspacePanel').style.display = 'none';
+        }
+      } catch (err) {
+        showToast(`Error: ${err.message}`);
+      }
+    }
+
+    async function reviewSummary(status) {
+      if (!selectedVisitId) return;
+      try {
+        const resp = await fetch(`${API_BASE}/visits/${selectedVisitId}/summary/review`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ review_status: status, doctor_notes: `Doctor marked summary as ${status}` })
+        });
+        const res = await resp.json();
+        if (res.success) {
+          showToast(`AI Summary status updated to ${status}`);
+        }
+      } catch (err) {
+        showToast(`Error: ${err.message}`);
+      }
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toastMsg');
+      t.innerText = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    function startAutoPoll() {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(() => refreshQueue(), 5000);
+    }
+  </script>
+</body>
+</html>
