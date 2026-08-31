@@ -259,11 +259,12 @@ class OpenAISummaryAdapter:
 
 
 class GeminiSummaryAdapter:
-    """Live LLM Summarization adapter using Google Gemini API (gemini-3.6-flash)."""
+    """Live LLM Summarization adapter using Google Gemini API (gemini-2.5-flash)."""
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-3.6-flash"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "gemini-2.5-flash"):
         self.api_key = api_key or settings.GEMINI_API_KEY
         self.model = model
+
 
     async def summarize(self, evidence: EvidencePacket) -> SummaryResult:
         if not self.api_key:

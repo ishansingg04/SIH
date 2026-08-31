@@ -24,6 +24,8 @@ if TYPE_CHECKING:
     from app.db.models.input import VisitInput
     from app.db.models.ai_job import AIJob
     from app.db.models.summary import Summary
+    from app.db.models.interview import PatientInterview
+
 
 
 class Visit(Base, UUIDMixin, TimestampMixin):
@@ -82,6 +84,9 @@ class Visit(Base, UUIDMixin, TimestampMixin):
     inputs: Mapped[List["VisitInput"]] = relationship("VisitInput", back_populates="visit", cascade="all, delete-orphan")
     ai_jobs: Mapped[List["AIJob"]] = relationship("AIJob", back_populates="visit", cascade="all, delete-orphan")
     summaries: Mapped[List["Summary"]] = relationship("Summary", back_populates="visit", cascade="all, delete-orphan")
+    interview: Mapped[Optional["PatientInterview"]] = relationship("PatientInterview", back_populates="visit", uselist=False, cascade="all, delete-orphan")
+
+
 
     __table_args__ = (
         UniqueConstraint("clinic_id", "token", "service_date", name="uq_visits_clinic_token_date"),

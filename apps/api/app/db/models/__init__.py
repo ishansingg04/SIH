@@ -22,6 +22,7 @@ from app.db.models.queue import QueueEntry
 from app.db.models.summary import Summary
 from app.db.models.user import User
 from app.db.models.visit import Visit
+from app.db.models.interview import PatientInterview
 
 __all__ = [
     "Base",
@@ -34,6 +35,8 @@ __all__ = [
     "AIJob",
     "Summary",
     "AuditEvent",
+    "PatientInterview",
+
     # Enums
     "UserRole",
     "VisitStatus",

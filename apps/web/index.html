@@ -3,168 +3,289 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MediKiosk | AI Summary & History Test Console</title>
+  <title>MediKiosk | Patient Intake Kiosk</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="app-container">
-    <!-- Header -->
-    <header class="app-header">
-      <div class="brand">
-        <div class="logo-icon">🌿</div>
-        <div>
-          <h1>MediKiosk <span>AI Summary & History</span></h1>
-          <p class="subtitle">Clinical Review, AYUSH Dashavidha Pariksha & Longitudinal History</p>
-        </div>
+  <div class="app-shell">
+    <!-- ───── Top Nav ───── -->
+    <header class="topbar">
+      <div class="topbar-brand">
+        <span class="brand-icon">🌿</span>
+        <span class="brand-name">MediKiosk</span>
       </div>
-      <div class="auth-bar">
-        <div class="role-selector">
-          <label for="user-role">Role:</label>
-          <select id="user-role">
-            <option value="doctor" selected>Dr. Sharma (Doctor)</option>
-            <option value="receptionist">Pooja Verma (Receptionist)</option>
-            <option value="admin">Admin (Clinic Admin)</option>
-            <option value="patient">Asha Devi (Patient)</option>
-          </select>
-        </div>
-        <button id="btn-login" class="btn btn-secondary">Switch Token</button>
-        <span id="auth-status" class="badge badge-success">Doctor Active</span>
+      <nav class="step-nav" id="step-nav">
+        <button class="step-tab active" data-step="1"><span class="step-num">1</span> Setup</button>
+        <button class="step-tab" data-step="2"><span class="step-num">2</span> Interview</button>
+        <button class="step-tab" data-step="3"><span class="step-num">3</span> Summary</button>
+      </nav>
+      <div class="topbar-meta">
+        <select id="user-role" class="role-select">
+          <option value="doctor" selected>Dr. Sharma</option>
+          <option value="receptionist">Receptionist</option>
+          <option value="admin">Admin</option>
+          <option value="patient">Patient</option>
+        </select>
+        <span id="auth-status" class="status-dot green"></span>
       </div>
     </header>
 
-    <!-- Main Workspace Split Layout -->
-    <main class="main-grid">
-      <!-- Left Column: Controls & Evidence -->
-      <aside class="sidebar-panel">
-        <!-- Target Selector Card -->
-        <section class="card">
-          <h2 class="card-title">1. Target Visit & Patient</h2>
-          <div class="form-group">
-            <label for="visit-id">Visit ID:</label>
-            <div class="input-with-action">
-              <input type="text" id="visit-id" placeholder="Loading seed visit..." />
-              <button id="btn-load-seed" class="btn btn-sm" title="Load Seed Visit">Auto-Fill</button>
-            </div>
+    <!-- ═══════════════════ STEP 1: SETUP ═══════════════════ -->
+    <section class="step-panel active" id="step-1">
+      <div class="step-hero">
+        <h2>Welcome to MediKiosk</h2>
+        <p>Load the active patient visit, then proceed to the voice interview.</p>
+      </div>
+
+      <div class="setup-grid">
+        <!-- Patient Card -->
+        <div class="setup-card" id="patient-card">
+          <div class="setup-card-header">
+            <span class="setup-card-icon">👤</span>
+            <h3>Patient & Visit</h3>
           </div>
-          <div class="form-group">
-            <label for="patient-id">Patient ID:</label>
-            <input type="text" id="patient-id" placeholder="Patient UUID..." />
+          <div id="patient-info" class="patient-info-box">
+            <p class="muted-text">Click "Load Visit" to fetch the active patient.</p>
           </div>
-          <div class="button-row">
-            <button id="btn-generate-summary" class="btn btn-primary">⚡ Generate Summary</button>
-            <label class="checkbox-label">
-              <input type="checkbox" id="chk-force-refresh" /> Force Refresh
+          <button id="btn-load-seed" class="btn btn-primary full-w">Load Active Visit</button>
+          <!-- Hidden fields for IDs -->
+          <input type="hidden" id="visit-id" />
+          <input type="hidden" id="patient-id" />
+        </div>
+
+        <!-- Config Card -->
+        <div class="setup-card">
+          <div class="setup-card-header">
+            <span class="setup-card-icon">⚙️</span>
+            <h3>Interview Settings</h3>
+          </div>
+          <div class="config-form">
+            <label>Language
+              <select id="interview-lang">
+                <option value="en">English</option>
+                <option value="hi" selected>Hindi (हिन्दी)</option>
+              </select>
+            </label>
+            <label>Pathway
+              <select id="interview-pathway">
+                <option value="ALLOPATHIC">General (Allopathic)</option>
+                <option value="AYUSH" selected>AYUSH (Ayurveda)</option>
+              </select>
             </label>
           </div>
-        </section>
-
-        <!-- Visit Raw Details & Inputs Card -->
-        <section class="card">
-          <h2 class="card-title">2. Captured Evidence</h2>
-          <div id="evidence-container" class="evidence-box">
-            <div class="empty-state">Click "Auto-Fill" or enter a Visit ID to inspect captured evidence.</div>
-          </div>
-        </section>
-
-        <!-- Longitudinal History Card -->
-        <section class="card">
-          <div class="card-header-flex">
-            <h2 class="card-title">3. Longitudinal History</h2>
-            <button id="btn-fetch-history" class="btn btn-sm btn-secondary">Load History</button>
-          </div>
-          <div id="history-container" class="history-box">
-            <div class="empty-state">No patient history loaded. Click "Load History".</div>
-          </div>
-        </section>
-      </aside>
-
-      <!-- Right Column: Live AI Summary & Doctor Review Console -->
-      <section class="content-panel">
-        <!-- Summary Viewer Header -->
-        <div class="card summary-header-card">
-          <div class="summary-status-bar">
-            <div>
-              <span class="label">Summary Status:</span>
-              <span id="summary-badge" class="badge badge-neutral">NOT_LOADED</span>
-            </div>
-            <div>
-              <span class="label">Version:</span>
-              <strong id="summary-version">-</strong>
-            </div>
-            <div>
-              <span class="label">AI Confidence:</span>
-              <span id="summary-confidence" class="confidence-indicator">-</span>
-            </div>
-            <div>
-              <span class="label">Reviewed By:</span>
-              <span id="summary-reviewer" class="reviewer-tag">None</span>
-            </div>
-          </div>
         </div>
 
-        <!-- Structured AI Clinical Summary Card -->
-        <div class="card summary-body-card">
-          <h2 class="card-title">Clinical AI Summary Packet</h2>
+        <!-- Document / Prescription Upload Card -->
+        <div class="setup-card">
+          <div class="setup-card-header">
+            <span class="setup-card-icon">📄</span>
+            <h3>Prescription & Document Upload</h3>
+          </div>
+          <div class="upload-box" id="upload-dropzone">
+            <input type="file" id="doc-file-input" accept="image/*,.pdf" class="file-input-hidden" />
+            <div class="upload-drop-content" id="drop-prompt">
+              <span class="upload-icon">📤</span>
+              <p><strong>Click to browse</strong> or drag & drop</p>
+              <small class="muted-text">Prescription, Lab Report, or Medicine Photo (PDF, JPG, PNG)</small>
+            </div>
+            <div id="file-chosen-preview" class="file-chosen hidden">
+              <span id="chosen-file-name" class="chosen-name">filename.pdf</span>
+              <button type="button" id="btn-clear-file" class="btn-clear">✕</button>
+            </div>
+          </div>
+          <button id="btn-upload-doc" class="btn btn-secondary full-w" style="margin-top: 10px;" disabled>
+            ⚡ Upload & Extract OCR Text
+          </button>
+          <div id="upload-status" class="status-bar hidden" style="margin-top: 8px;"></div>
+        </div>
+
+        <!-- Evidence Card -->
+        <div class="setup-card wide">
+          <div class="setup-card-header">
+            <span class="setup-card-icon">📋</span>
+            <h3>Captured Evidence & Medical Documents</h3>
+          </div>
+          <div id="evidence-container" class="evidence-list">
+            <p class="muted-text">Evidence will appear after loading a visit.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-footer">
+        <button id="btn-goto-interview" class="btn btn-accent btn-lg" disabled>
+          Proceed to Interview →
+        </button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ STEP 2: INTERVIEW ═══════════════════ -->
+    <section class="step-panel" id="step-2">
+
+      <!-- 2A: Initial Intake (before any question is asked) -->
+      <div id="interview-intake" class="interview-pane">
+        <div class="intake-header">
+          <h2 id="intake-title">🎙️ Describe Your Health Concern</h2>
+          <p id="intake-subtitle">Select language, then speak or type your symptoms. Hindi is automatically transcribed & translated.</p>
           
-          <!-- Chief Complaint Banner -->
-          <div id="chief-complaint-banner" class="complaint-banner">
-            <span class="complaint-label">Chief Complaint:</span>
-            <span id="chief-complaint-text" class="complaint-val">No summary generated yet.</span>
-          </div>
-
-          <div class="summary-sections">
-            <!-- Patient Reported Facts -->
-            <div class="summary-section">
-              <div class="section-badge patient">Patient-Reported Facts (Voice & Forms)</div>
-              <div id="patient-reported-content" class="section-content empty">Awaiting generation...</div>
-            </div>
-
-            <!-- Document Extracted Facts -->
-            <div class="summary-section">
-              <div class="section-badge doc">Document-Extracted Facts (OCR Prescriptions/Reports)</div>
-              <div id="document-extracted-content" class="section-content empty">Awaiting generation...</div>
-            </div>
-
-            <!-- AYUSH Dashavidha Pariksha -->
-            <div class="summary-section">
-              <div class="section-badge ayush">AYUSH Dashavidha Pariksha Assessment</div>
-              <div id="ayush-assessment-content" class="section-content empty">Awaiting generation...</div>
-            </div>
-
-            <!-- Assistive Model Suggestions & Uncertainty -->
-            <div class="summary-section">
-              <div class="section-badge model">AI Assistive Suggestions & Uncertainty Labels</div>
-              <div id="model-suggestions-content" class="section-content empty">Awaiting generation...</div>
+          <!-- Prominent Language Selector Pills -->
+          <div class="lang-pills-row">
+            <span class="lang-pill-label">Interview Language:</span>
+            <div class="lang-pills">
+              <button type="button" class="lang-pill" data-lang="en" id="btn-lang-en">🇬🇧 English</button>
+              <button type="button" class="lang-pill active" data-lang="hi" id="btn-lang-hi">🇮🇳 हिन्दी (Hindi)</button>
             </div>
           </div>
         </div>
+        <textarea id="interview-initial-text" rows="3"
+          placeholder="उदा. मुझे दो दिन से पेट में तेज दर्द और हल्का बुखार है / Severe headache for 2 days..."></textarea>
+        
+        <!-- Quick Attach Prescription in Step 2 -->
+        <div class="quick-doc-bar">
+          <button type="button" id="btn-quick-attach" class="btn-attach">
+            📎 <span id="lbl-quick-attach">Attach Prescription / Medical Document</span>
+          </button>
+          <input type="file" id="quick-doc-input" accept="image/*,.pdf" class="file-input-hidden" />
+          <span id="quick-doc-status" class="quick-status-text hidden"></span>
+        </div>
 
-        <!-- Doctor Review Action Console -->
-        <div class="card review-action-card">
-          <h2 class="card-title">Doctor Verification & Decision</h2>
-          <div class="form-group">
-            <label for="doctor-notes">Doctor Clinical Notes & Corrections:</label>
-            <textarea id="doctor-notes" rows="2" placeholder="Add verified clinical notes or corrections..."></textarea>
+        <div class="intake-actions">
+          <button id="btn-record-initial" class="btn btn-mic">
+            <span class="mic-icon">🎤</span> <span id="lbl-record-initial">Record Voice</span>
+          </button>
+          <button id="btn-start-interview" class="btn btn-primary btn-lg"><span id="lbl-start-interview">Start Interview →</span></button>
+        </div>
+        <div id="intake-status" class="status-bar hidden"></div>
+      </div>
+
+      <!-- 2B: Active Question Loop -->
+      <div id="interview-active" class="interview-pane hidden">
+        <!-- Progress -->
+        <div class="progress-strip">
+          <div class="progress-meta">
+            <span id="q-counter">Question 1 of 6</span>
+            <span id="q-percent">0%</span>
           </div>
-          <div class="review-buttons">
-            <button id="btn-approve" class="btn btn-success" disabled>✓ Approve (Confirm)</button>
-            <button id="btn-edit" class="btn btn-warning" disabled>✎ Edit Summary Payload</button>
-            <button id="btn-reject" class="btn btn-danger" disabled>✕ Reject Summary</button>
+          <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+        </div>
+
+        <!-- Question Card -->
+        <div class="question-card">
+          <span class="slot-tag" id="slot-tag">chief_complaint</span>
+          <h3 id="question-text">What is the main health problem bringing you here today?</h3>
+          <div id="options-row" class="options-row hidden"></div>
+        </div>
+
+        <!-- Answer Area -->
+        <div class="answer-area">
+          <textarea id="answer-text" rows="2" placeholder="Type your answer or press Record..."></textarea>
+          <div class="answer-actions">
+            <button id="btn-record-turn" class="btn btn-mic"><span class="mic-icon">🎤</span> Record</button>
+            <button id="btn-skip" class="btn btn-ghost">Skip</button>
+            <button id="btn-submit-answer" class="btn btn-primary">Submit →</button>
+          </div>
+          <div id="turn-status" class="status-bar hidden"></div>
+        </div>
+
+        <!-- Transcript Preview -->
+        <div id="transcript-box" class="transcript-box hidden">
+          <strong>Transcript:</strong> <span id="transcript-text"></span>
+        </div>
+
+        <!-- Extracted Facts -->
+        <div class="facts-panel">
+          <div class="facts-header">
+            <h4>Extracted Clinical Facts (<span id="facts-count">0</span>)</h4>
+            <small class="muted-text">Standardized in English</small>
+          </div>
+          <div id="facts-list" class="facts-list">
+            <p class="muted-text">No facts extracted yet.</p>
           </div>
         </div>
-      </section>
-    </main>
 
-    <!-- Raw JSON Inspector Drawer / Footer -->
-    <footer class="app-footer">
-      <details>
-        <summary>Debug: API Response & Raw JSON Payload</summary>
+        <!-- Red Flags -->
+        <div id="red-flags" class="red-flag-banner hidden"></div>
+
+        <!-- Controls -->
+        <div class="interview-controls">
+          <button id="btn-restart" class="btn btn-ghost">🔄 Restart</button>
+          <button id="btn-complete" class="btn btn-accent btn-lg">✓ Complete Interview & Generate Summary</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ STEP 3: SUMMARY & REVIEW ═══════════════════ -->
+    <section class="step-panel" id="step-3">
+      <div class="summary-header">
+        <h2>AI Clinical Summary</h2>
+        <div class="summary-meta-row">
+          <span class="meta-item">Status: <strong id="summary-badge" class="badge badge-neutral">NOT LOADED</strong></span>
+          <span class="meta-item">Version: <strong id="summary-version">—</strong></span>
+          <span class="meta-item">Confidence: <strong id="summary-confidence" class="confidence">—</strong></span>
+          <span class="meta-item">Reviewer: <strong id="summary-reviewer" class="mono">None</strong></span>
+        </div>
+      </div>
+
+      <!-- Chief Complaint -->
+      <div class="cc-banner">
+        <span class="cc-label">Chief Complaint</span>
+        <span id="chief-complaint-text">No summary generated yet.</span>
+      </div>
+
+      <!-- Sections Grid -->
+      <div class="summary-grid">
+        <div class="summary-tile patient">
+          <h4>Patient-Reported Facts</h4>
+          <div id="patient-reported-content" class="tile-body muted-text">Awaiting generation…</div>
+        </div>
+        <div class="summary-tile doc">
+          <h4>Document-Extracted (OCR)</h4>
+          <div id="document-extracted-content" class="tile-body muted-text">Awaiting generation…</div>
+        </div>
+        <div class="summary-tile ayush">
+          <h4>AYUSH Assessment</h4>
+          <div id="ayush-assessment-content" class="tile-body muted-text">Awaiting generation…</div>
+        </div>
+        <div class="summary-tile ai">
+          <h4>AI Suggestions & Uncertainty</h4>
+          <div id="model-suggestions-content" class="tile-body muted-text">Awaiting generation…</div>
+        </div>
+      </div>
+
+      <!-- Generate / Refresh -->
+      <div class="summary-actions-top">
+        <button id="btn-generate-summary" class="btn btn-primary">⚡ Generate / Refresh Summary</button>
+        <label class="check-label"><input type="checkbox" id="chk-force-refresh" /> Force Refresh</label>
+      </div>
+
+      <!-- Doctor Review -->
+      <div class="review-panel">
+        <h3>Doctor Verification</h3>
+        <textarea id="doctor-notes" rows="2" placeholder="Add clinical notes or corrections…"></textarea>
+        <div class="review-actions">
+          <button id="btn-approve" class="btn btn-approve" disabled>✓ Approve</button>
+          <button id="btn-edit" class="btn btn-edit-action" disabled>✎ Edit</button>
+          <button id="btn-reject" class="btn btn-reject" disabled>✕ Reject</button>
+        </div>
+      </div>
+
+      <!-- History -->
+      <details class="history-drawer">
+        <summary>📂 Patient Longitudinal History</summary>
+        <div id="history-container" class="history-body">
+          <p class="muted-text">Click to load history.</p>
+        </div>
+        <button id="btn-fetch-history" class="btn btn-ghost" style="margin-top:8px;">Load History</button>
+      </details>
+
+      <!-- Debug -->
+      <details class="debug-drawer">
+        <summary>🔧 Debug: Raw API JSON</summary>
         <pre id="raw-json-output">{}</pre>
       </details>
-    </footer>
+    </section>
   </div>
 
   <script src="app.js"></script>

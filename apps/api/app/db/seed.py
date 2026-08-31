@@ -47,7 +47,7 @@ def mask_phone(phone: str) -> str:
     return "+91-XXXXX-XXXXX"
 
 
-def seed_database(db: Session) -> Dict[str, Any]:
+def seed_database(db: Session, include_sample_summary: bool = False) -> Dict[str, Any]:
     """Populate initial baseline seed data for MediKiosk platform."""
     logger.info("Starting database seeding...")
 
@@ -122,12 +122,11 @@ def seed_database(db: Session) -> Dict[str, Any]:
         db.flush()
         logger.info("Seeded Patient: Asha Devi")
     elif not patient.user_id:
-        # Backfill user_id if patient already exists without it
         patient.user_id = asha_user.id
         db.flush()
         logger.info("Backfilled user_id for Asha Devi patient record")
 
-    # 4. Seed Demo Visit (Token A12 with AYUSH Dashavidha Pariksha)
+    # 4. Seed Demo Visit (Token A12)
     now = datetime.now(timezone.utc)
     today = now.date()
 
@@ -150,37 +149,12 @@ def seed_database(db: Session) -> Dict[str, Any]:
             consent_at=now,
             consent_language="hi",
             created_by=seeded_users["asha.devi@medikiosk.in"].id,
-            # Complete AYUSH Dashavidha Pariksha Fields
-            prakriti={
-                "primary_dosha": PrakritiDosha.VATA_PITTA.value,
-                "secondary_dosha": PrakritiDosha.PITTA.value,
-                "patient_observations": "Lean build, dry skin, sensitive to cold wind, light sleep pattern",
-                "clinician_notes": "Constitutional Vata-Pitta baseline confirmed during prior observation",
-            },
-            vikriti={
-                "aggravated_doshas": [PrakritiDosha.VATA.value],
-                "symptom_pattern": "Dry cough and throat irritation worsening in the evening",
-                "onset_factors": "Exposure to cold air and seasonal transition",
-            },
-            agni={
-                "agni_type": AgniType.VISHAMA.value,
-                "appetite_level": "Irregular",
-                "digestion_speed_hours": 4.5,
-                "patient_description": "भूख कभी ज्यादा कभी कम लगती है, खाने के बाद भारीपन (Appetite fluctuates)",
-            },
-            koshtha={
-                "koshtha_type": KoshthaType.KRURA.value,
-                "bowel_regularity": "Constipated / Irregular",
-                "laxative_dependency": False,
-                "patient_notes": "मल त्याग में कठिनाई (Difficulty in elimination)",
-            },
-            sattva={
-                "sattva_type": SattvaType.MADHYAMA.value,
-                "sleep_quality": "Disturbed due to nighttime coughing fits",
-                "stress_level": "Medium",
-                "wellbeing_prompts": "Mildly anxious about ongoing fever and cough",
-            },
-            ayush_notes="Patient completed Hindi voice intake at Kiosk. Selected AYUSH Dashavidha Pariksha pathway.",
+            prakriti={"primary_dosha": "VATA_PITTA"} if include_sample_summary else None,
+            vikriti={"aggravated_doshas": ["VATA"]} if include_sample_summary else None,
+            agni={"agni_type": "VISHAMA"} if include_sample_summary else None,
+            koshtha={"koshtha_type": "KRURA"} if include_sample_summary else None,
+            sattva={"sattva_type": "MADHYAMA"} if include_sample_summary else None,
+            ayush_notes=None,
         )
         db.add(visit)
         db.flush()
@@ -196,61 +170,26 @@ def seed_database(db: Session) -> Dict[str, Any]:
         )
         db.add(queue_entry)
 
-        # 6. Visit Inputs (Audio + Document)
-        audio_input = VisitInput(
-            id=uuid.uuid4(),
-            visit_id=visit.id,
-            kind=InputKind.AUDIO,
-            object_key="audio/asha_devi_symptoms_hi.wav",
-            text="मुझे दो दिन से हल्का बुखार और सूखी खांसी है, शाम को ज्यादा परेशानी होती है।",
-            status=InputStatus.COMPLETED,
-            provenance={"source": "groq-whisper", "confidence": 0.98, "language": "hi"},
-        )
-        db.add(audio_input)
+        # 6. Sample Summary for Testing Suite (only if requested)
+        if include_sample_summary:
+            summary = Summary(
+                id=uuid.uuid4(),
+                visit_id=visit.id,
+                version=1,
+                payload_json={
+                    "patient_reported": {"chief_complaint": "Fever and cough", "duration": "2 days"},
+                    "document_extracted": {"prior_prescriptions": ["Paracetamol 500mg"]},
+                    "ayush_assessment": {"prakriti": "VATA_PITTA", "agni": "VISHAMA", "koshtha": "KRURA", "sattva": "MADHYAMA"},
+                    "model_suggestions": [{"category": "clinical_consideration", "suggestion": "Rule out acute bronchitis"}],
+                    "uncertainty_labels": [],
+                },
+                confidence=0.94,
+                review_status=SummaryReviewStatus.DRAFT,
+                doctor_notes=None,
+            )
+            db.add(summary)
 
-        # 7. AI Summary
-        summary = Summary(
-            id=uuid.uuid4(),
-            visit_id=visit.id,
-            version=1,
-            payload_json={
-                "patient_reported": {
-                    "chief_complaint": "बुखार और खांसी (Fever and cough)",
-                    "duration": "2 days",
-                    "severity": "Moderate",
-                },
-                "document_extracted": {
-                    "prior_prescriptions": ["Paracetamol 500mg"],
-                    "known_allergies": "None reported",
-                },
-                "ayush_assessment": {
-                    "prakriti": "VATA_PITTA",
-                    "vikriti": "VATA (Kasa / Shwasa lakshana)",
-                    "agni": "VISHAMA",
-                    "koshtha": "KRURA",
-                    "sattva": "MADHYAMA",
-                },
-                "model_suggestions": [
-                    {
-                        "category": "clinical_consideration",
-                        "suggestion": "Rule out acute viral bronchitis; consider Sitopaladi Churna / Tulsi swarasa if AYUSH protocol indicated.",
-                        "confidence": 0.90,
-                    }
-                ],
-                "uncertainty_labels": [
-                    {
-                        "field": "temperature",
-                        "reason": "Patient did not take digital thermometer reading at home",
-                    }
-                ],
-            },
-            confidence=0.94,
-            review_status=SummaryReviewStatus.DRAFT,
-            doctor_notes=None,
-        )
-        db.add(summary)
-
-        # 8. Initial Audit Event
+        # 7. Initial Audit Event
         audit = AuditEvent(
             id=uuid.uuid4(),
             actor_id=seeded_users["asha.devi@medikiosk.in"].id,
@@ -263,6 +202,7 @@ def seed_database(db: Session) -> Dict[str, Any]:
             created_at=now,
         )
         db.add(audit)
+
 
     db.commit()
     logger.info("Database seeding completed successfully.")

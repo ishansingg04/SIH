@@ -45,17 +45,29 @@ class SummaryService(BaseService):
                 logger.info(f"Returning existing summary version {existing.version} for visit {visit_id}")
                 return existing
 
-        # 1. Collect audio transcripts & text inputs
+        # 1. Collect audio transcripts, interview briefings & text inputs
         transcripts: List[str] = []
         document_texts: List[str] = []
 
         for inp in visit.inputs:
             if inp.is_deleted:
                 continue
-            if inp.kind in (InputKind.AUDIO, InputKind.TEXT) and inp.text:
+            if inp.kind in (InputKind.AUDIO, InputKind.TEXT, InputKind.AYUSH_FORM) and inp.text:
+
                 transcripts.append(inp.text)
             elif inp.kind in (InputKind.IMAGE, InputKind.PDF) and inp.text:
                 document_texts.append(inp.text)
+
+        # Include interview facts if interview exists
+        if visit.interview and visit.interview.extracted_facts:
+            facts_lines = [
+                f"{f.get('slot', '').replace('_', ' ').title()}: {f.get('value', '')}"
+                for f in visit.interview.extracted_facts
+                if f.get("value")
+            ]
+            if facts_lines:
+                transcripts.append("Verified Adaptive Interview Facts:\n" + "\n".join(facts_lines))
+
 
         # 2. Collect AYUSH Dashavidha Pariksha inputs
         ayush_intake = None

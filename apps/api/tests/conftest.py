@@ -15,6 +15,10 @@ if api_dir not in sys.path:
 
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["APP_ENV"] = "test"
+os.environ["AI_PROVIDER_MODE"] = "mock"
+os.environ["WHISPER_PROVIDER_MODE"] = "mock"
+os.environ["OCR_PROVIDER_MODE"] = "mock"
+
 
 from app.api.dependencies import get_db
 from app.core.security import create_access_token
@@ -41,9 +45,10 @@ def setup_test_db():
     """Create all tables and seed test data before running tests."""
     Base.metadata.create_all(bind=engine)
     with TestingSessionLocal() as session:
-        seed_database(session)
+        seed_database(session, include_sample_summary=True)
     yield
     Base.metadata.drop_all(bind=engine)
+
 
 
 @pytest.fixture

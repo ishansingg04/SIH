@@ -3,6 +3,7 @@ from app.api.v1.endpoints import (
     auth,
     doctor,
     health,
+    interview,
     patients,
     platform,
     processing,
@@ -25,4 +26,6 @@ api_v1_router.include_router(doctor.visits_doctor_router)
 api_v1_router.include_router(uploads.router)
 api_v1_router.include_router(processing.router)
 api_v1_router.include_router(summaries.router)
+api_v1_router.include_router(interview.router)
+
 

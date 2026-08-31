@@ -183,8 +183,11 @@
             <input type="text" id="apiUrl" value="http://localhost:8000" placeholder="http://localhost:8000">
         </div>
         <div class="field">
-            <label>Visit ID</label>
-            <input type="text" id="visitId" placeholder="Paste visit UUID">
+            <label style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Visit ID (UUID)</span>
+                <a href="javascript:void(0)" onclick="autoFillActiveVisit()" style="color:var(--accent); font-size:0.75rem; text-decoration:none;">⚡ Auto-Fill Seed Visit</a>
+            </label>
+            <input type="text" id="visitId" placeholder="Paste visit UUID (e.g. from Auto-Fill)">
         </div>
         <div class="field">
             <label>Auth Token (optional)</label>
@@ -198,6 +201,7 @@
             </select>
         </div>
     </div>
+
 
     <div class="grid">
         <!-- Audio Recorder Card -->
@@ -595,10 +599,28 @@ function toggleWebSpeech() {
     setText('webSpeechStatus', 'Listening...');
 }
 
+// ====================== Auto-Fill Helper ======================
+async function autoFillActiveVisit() {
+    try {
+        const res = await fetch(`${getApi()}/api/v1/summaries/demo/active-context`);
+        const data = await res.json();
+        if (data && data.data && data.data.visit_id) {
+            document.getElementById('visitId').value = data.data.visit_id;
+        }
+    } catch (e) {
+        console.warn('Could not auto-fill visit ID:', e);
+    }
+}
+
 // ====================== Init ======================
 const params = new URLSearchParams(window.location.search);
 if (params.get('api')) document.getElementById('apiUrl').value = params.get('api');
-if (params.get('visit')) document.getElementById('visitId').value = params.get('visit');
+if (params.get('visit')) {
+    document.getElementById('visitId').value = params.get('visit');
+} else {
+    autoFillActiveVisit();
+}
 </script>
 </body>
 </html>
+
